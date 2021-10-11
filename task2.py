@@ -7,6 +7,8 @@ f = open('G.json',)
 g_json = json.load(f)
 f = open('Cost.json',)
 e_json = json.load(f)
+f = open('Coord.json',)
+coord_json = json.load(f)
 
 print("load finish")
 
@@ -21,6 +23,11 @@ class Graph:
         self.weight = dist_json
         self.node = g_json
         self.cost = e_json
+        self.coord = coord_json
+        self.found = False
+        self.res_dist = 0
+        self.res_energy = 0
+        self.path = []
 
     def printPath(self, j):
 
@@ -30,6 +37,34 @@ class Graph:
             return
         self.printPath(self.parent[j])
         print("->", j, end=" "),
+
+    def dfs(self, start, end, dist_so_far, energy_so_far, path=[]):
+        if self.found:
+            return
+        if energy_so_far > 287932:
+            return
+
+        path = path + [start]
+        if start == end:
+            path.append(path)
+            del path[-1]
+            print(path)
+            print(dist_so_far)
+            print(energy_so_far)
+            self.path = path
+            self.res_dist = dist_so_far
+            self.res_energy = energy_so_far
+            self.found = True
+            return
+
+        for neighbor in self.node[str(start)]:
+            neighbor = int(neighbor)
+            distance = self.weight[str(start) + "," + str(neighbor)]
+            energy = self.cost[str(start) + "," + str(neighbor)]
+
+            if neighbor not in path:
+                self.dfs(neighbor, end, dist_so_far +
+                         distance, energy_so_far+energy, path)
 
     def dijkstra(self, start_vertex, end_vertex):
         D = {v+1: float('inf') for v in range(self.v)}
@@ -69,8 +104,8 @@ class Graph:
 g = Graph(264346)
 
 print("start Computing")
-D, E = g.dijkstra(1, 50)
-g.printPath(50)
+D, E = g.dfs(1, 50, 0, 0)
+# g.printPath(50)
 
 print("\nShortest distance: ", D[50])
 print("Total energy cost: ", E[50])
