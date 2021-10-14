@@ -1,5 +1,6 @@
 from queue import PriorityQueue
 import json
+import math
 
 f = open('Dist.json',)
 dist_json = json.load(f)
@@ -44,7 +45,7 @@ class Graph:
         coor_f = self.coord[str(final)]
         dist_start = (coor_s[0] - coor_f[0]) ^ 2 + (coor_s[1] - coor_f[1]) ^ 2
         dist_end = (coor_e[0] - coor_f[0]) ^ 2 + (coor_e[1] - coor_f[1]) ^ 2
-        dist_moved = dist_end - dist_start
+        dist_moved = math.sqrt(dist_end - dist_start)
         moved_per_energy = dist_moved / energy
         return moved_per_energy
 
@@ -93,6 +94,44 @@ class Graph:
                 self.astar(neighbor, end, dist_so_far +
                            distance, energy_so_far+energy, path)
         return
+
+    def astarv2(self, start_vertex, end_vertex):
+        D = {v+1: float('inf') for v in range(self.v)}
+        D[start_vertex] = 0
+        E = {v+1: float('inf') for v in range(self.v)}
+        E[start_vertex] = 0
+        H = {v+1: float('inf') for v in range(self.v)}
+        H[start_vertex] = 0
+
+        pq = PriorityQueue()
+        pq.put((0, start_vertex))
+
+        while not pq.empty():
+            (dist, current_vertex) = pq.get()
+            self.visited.append(current_vertex)
+            # print(current_vertex)
+
+            for neighbor in self.node[str(current_vertex)]:
+                neighbor = int(neighbor)
+                distance = self.weight[str(
+                    current_vertex) + "," + str(neighbor)]
+                energy = self.cost[str(
+                    current_vertex) + "," + str(neighbor)]
+                if neighbor not in self.visited:
+                    heu = self.heuristic(current_vertex, neighbor, 50, energy)
+                    old_cost = D[neighbor]
+                    old_energy = E[neighbor]
+                    old_heu = H[neighbor]
+                    new_cost = D[current_vertex] + distance
+                    new_energy = E[current_vertex] + energy
+                    new_heu = H[current_vertex] + heu
+                    if new_heu < old_heu:
+                        self.parent[neighbor] = current_vertex
+                        pq.put((new_cost, neighbor))
+                        D[neighbor] = new_cost
+                        E[neighbor] = new_energy
+                        H[neighbor] = new_heu
+        return D, E
 
     def dfs(self, start, end, dist_so_far, energy_so_far, path=[]):
         if self.found:
@@ -163,12 +202,19 @@ g = Graph(264346)
 val = input("Task 1 : 1\nTask 2 : 2\nTask 3 : 3\nEnter your value: ")
 
 if val == "1":
-    D, E = g.dijkstra(1, 50, 0, 0)
+    D, E = g.dijkstra(1, 50)
+    g.printPath(50)
     print("\nShortest distance: ", D[50])
     print("Total energy cost: ", E[50])
 
 if val == "2":
     g.dfs(1, 50, 0, 0)
+
+if val == "3":
+    D, E = g.astarv2(1, 50)
+    g.printPath(50)
+    print("\nShortest distance: ", D[50])
+    print("Total energy cost: ", E[50])
 
 if val == "3":
     g.astar(1, 50, 0, 0)
